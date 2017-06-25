@@ -72,7 +72,6 @@ fn main() {
                 match player {
                     &mut PlayerType::CommandAI(ref mut cmd) => {
                         let s = app.game.get_state_str(id);
-                        println!("{:?}", s);
                         cmd.write(s);
                         let act = cmd.act();
                         app.game.act(id, act);
