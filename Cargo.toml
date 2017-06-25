@@ -1,0 +1,11 @@
+[package]
+authors = ["kngwyu <yuji.kngw.80s.revive@gmail.com>"]
+name = "oil_dig_game"
+version = "0.1.0"
+
+[dependencies]
+piston = "0.32.0"
+piston2d-graphics = "0.21.1"
+piston2d-opengl_graphics = "0.44.0"
+pistoncore-glutin_window = "0.37.0"
+rand = "0.3.15"
