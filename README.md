@@ -53,7 +53,7 @@
 爆弾、マルチスレッド、複数対戦の検証、GUI化
 
 # 開発言語など
-rust1.18.0
+rust1.18.0  
 ライブラリはこれ
 https://github.com/PistonDevelopers/piston
 
@@ -61,11 +61,11 @@ https://github.com/PistonDevelopers/piston
 
 ## Linux, Mac
 
-・https://www.rust-lang.org/ja-JP/を見てrustをいれる  
+・https://www.rust-lang.org/ja-JP/ を見てrustをいれる  
 ・curl ... してRUST_SRC_PATHを設定すれば動く  
-・git clone https://github.com/kngwyu/oil_dig_game.gitする  
 ・
 ```text
+git clone https://github.com/kngwyu/oil_dig_game.git
 cd ./oil_dig_game
 cargo run
 ```
