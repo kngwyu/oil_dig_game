@@ -44,8 +44,8 @@
 
 ![png1](./game_0625.png)
 
-・石油の配置とプレイヤーの移動はできた
-・デバッグモードになっており、貪欲法AIが一人で起動する(g++必須)
+・石油の配置とプレイヤーの移動はできた  
+・デバッグモードになっており、貪欲法AIが一人で起動する(g++必須)  
 
 # todo
 
@@ -60,9 +60,9 @@ https://github.com/PistonDevelopers/piston
 
 ## Linux, Mac
 
-・https://www.rust-lang.org/ja-JP/を見てrustをいれる
-・curl ... してRUST_SRC_PATHを設定すれば動く
-・git clone https://github.com/kngwyu/oil_dig_game.gitする
+・https://www.rust-lang.org/ja-JP/を見てrustをいれる  
+・curl ... してRUST_SRC_PATHを設定すれば動く  
+・git clone https://github.com/kngwyu/oil_dig_game.gitする  
 ・
 ```text
 cd ./oil_dig_game
