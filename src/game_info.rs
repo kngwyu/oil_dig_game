@@ -1,17 +1,18 @@
-use piston::window::{WindowSettings, AdvancedWindow};
-use piston::event_loop::*;
 use piston::input::*;
-use glutin_window::GlutinWindow as Window;
-use opengl_graphics::{GlGraphics, OpenGL};
+use opengl_graphics::GlGraphics;
 use std::collections::BTreeMap;
 use gamemap::{Field, Coord};
+use consts::*;
 use rand::{self, Rng};
 
-const MOVES: [Coord; 5] = [Coord { x: 0, y: -1 },
-                           Coord { x: -1, y: 0 },
-                           Coord { x: 1, y: 0 },
-                           Coord { x: 0, y: 1 },
-                           Coord { x: 0, y: 0 }];
+const MOVES: [Coord; 5] = [
+    Coord { x: 0, y: -1 },
+    Coord { x: -1, y: 0 },
+    Coord { x: 1, y: 0 },
+    Coord { x: 0, y: 1 },
+    Coord { x: 0, y: 0 },
+];
+
 // 爆弾の実装はまた今度...
 #[derive(Debug)]
 pub struct Game {
@@ -25,7 +26,6 @@ pub struct Game {
     bom_num: usize,
 }
 
-pub const WINDOW_SIZE: u32 = 400;
 fn cd_ok(cd: Coord, s: usize) -> bool {
     cd.x >= 0 && cd.y >= 0 && cd.x < s as i32 && cd.y < s as i32
 }
@@ -54,7 +54,7 @@ impl Game {
         }
     }
     pub fn act(&mut self, player_id: usize, ac: Action) {
-        println!("@_@{:?}", ac);
+        println!("@_@{:?} {}", ac, player_id);
         match ac {
             Action::Move(id) => {
                 if id < 4 {
@@ -66,8 +66,7 @@ impl Game {
                     println!("@_@ OK");
                     self.player[player_id].cd = nxt;
                     if let FieldState::Oil(_) = self.field[nxt] {
-                        self.player[player_id].galon +=
-                            self.oil_list[&nxt];
+                        self.player[player_id].galon += self.oil_list[&nxt];
                         println!("{:?}", self.oil_list.remove(&nxt));
                         self.field[nxt] = FieldState::None;
                     }
@@ -105,7 +104,7 @@ impl Game {
         s
     }
 
-    pub fn render(&self, gl: &mut GlGraphics, started: bool, args: &RenderArgs) {
+    pub fn render(&self, gl: &mut GlGraphics, args: &RenderArgs) {
         const BLACK: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
         const RED: [f32; 4] = [1.0, 0.0, 0.0, 1.0];
         const BLUE: [f32; 4] = [0.0, 0.0, 1.0, 1.0];
@@ -114,16 +113,14 @@ impl Game {
         use graphics::rectangle;
         use graphics::Transformed;
         let bsize = WINDOW_SIZE as usize / self.size;
-        if started {
-            gl.draw(args.viewport(), |c, gl| {
-                Grid {
-                    cols: self.size as u32,
-                    rows: self.size as u32,
-                    units: bsize as f64,
-                }
-                .draw(&Line::new(BLACK, 0.8), &c.draw_state, c.transform, gl);
-            });
-        }
+        gl.draw(args.viewport(), |c, gl| {
+            Grid {
+                cols: self.size as u32,
+                rows: self.size as u32,
+                units: bsize as f64,
+            }
+            .draw(&Line::new(BLACK, 0.8), &c.draw_state, c.transform, gl);
+        });
         let block = rectangle::square(0.0, 0.0, bsize as f64);
         for y in 0..self.size {
             for x in 0..self.size {
@@ -134,8 +131,9 @@ impl Game {
                 };
                 let fx = (x * bsize) as f64;
                 let fy = (y * bsize) as f64;
-                gl.draw(args.viewport(),
-                        |c, gl| { rectangle(color, block, c.transform.trans(fx, fy), gl); });
+                gl.draw(args.viewport(), |c, gl| {
+                    rectangle(color, block, c.transform.trans(fx, fy), gl);
+                });
             }
         }
         let offset = bsize as f64 / 4.0;
@@ -143,8 +141,9 @@ impl Game {
         for i in 0..self.player_num {
             let fx = (self.player[i].cd.x * bsize as i32) as f64 + offset;
             let fy = (self.player[i].cd.y * bsize as i32) as f64 + offset;
-            gl.draw(args.viewport(),
-                    |c, gl| { rectangle(BLUE, block, c.transform.trans(fx, fy), gl); });
+            gl.draw(args.viewport(), |c, gl| {
+                rectangle(BLUE, block, c.transform.trans(fx, fy), gl);
+            });
         }
     }
 }

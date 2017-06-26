@@ -3,7 +3,7 @@ extern crate graphics;
 extern crate glutin_window;
 extern crate opengl_graphics;
 extern crate rand;
-use piston::window::{WindowSettings, AdvancedWindow};
+use piston::window::WindowSettings;
 use piston::event_loop::*;
 use piston::input::*;
 use glutin_window::GlutinWindow as Window;
@@ -12,19 +12,18 @@ mod scanner;
 mod gamemap;
 mod player;
 mod game_info;
+mod consts;
 use scanner::Scanner;
 use player::{PlayerType, ProcHandler};
 use game_info::*;
+use consts::*;
 use std::time;
 use std::thread;
 use std::process::*;
-const DEBUG: bool = true;
-const WINDOW_TITLE: &'static str = "Oil Dig Game";
 fn main() {
-    let mut sc = Scanner::new(std::io::stdin());
-    println!("player num: ");
     let mut players = Vec::new();
     let player_num = if DEBUG {
+        let pnum_debug = 4;
         let mut c = Command::new("g++")
             .arg("./player_ai/sample.cc")
             .arg("-std=c++11")
@@ -32,10 +31,16 @@ fn main() {
             .expect("failed to comple");
         let ecode = c.wait().expect("failed to wait on child");
         assert!(ecode.success(), "compile error");
-        let p = PlayerType::CommandAI(ProcHandler::new("./a.out"));
-        players.push((p, 0));
-        1
+        for i in 0..pnum_debug {
+            let p = PlayerType::CommandAI(ProcHandler::new("./a.out"));
+            players.push((p, i));
+        }
+        pnum_debug
     } else {
+        // 一応CUIがある
+        // 使いづらいのですぐ廃止すると思うけど...
+        let mut sc = Scanner::new(std::io::stdin());
+        println!("player num: ");
         let player_num: usize = sc.ne();
         assert!(player_num <= 4, "player num <= 4");
         for id in 0..player_num {
@@ -55,6 +60,8 @@ fn main() {
         }
         player_num
     };
+
+
     // ビジュアライザ起動
     let opengl = OpenGL::V3_2;
     let mut window: Window = WindowSettings::new(WINDOW_TITLE, [WINDOW_SIZE, WINDOW_SIZE])
@@ -62,7 +69,7 @@ fn main() {
         .exit_on_esc(true)
         .build()
         .unwrap();
-    let mut app = App::new(GlGraphics::new(opengl), player_num);
+    let mut vis = Visualiizer::new(GlGraphics::new(opengl), player_num);
     let event_settings = EventSettings::new().ups(3).max_fps(10);
     let mut events = Events::new(event_settings);
     while let Some(e) = events.next(&mut window) {
@@ -70,58 +77,44 @@ fn main() {
             for &mut (ref mut player, id) in &mut players {
                 match player {
                     &mut PlayerType::CommandAI(ref mut cmd) => {
-                        let s = app.game.get_state_str(id);
+                        let s = vis.game.get_state_str(id);
                         cmd.write(s);
                         let act = cmd.act();
-                        app.game.act(id, act);
+                        vis.game.act(id, act);
                     }
                     _ => {}
                 }
-                app.game.update();
-                app.started = true;
+                vis.game.update();
             }
-            app.render(&r);
+            vis.render(&r);
             let millis100 = time::Duration::from_millis(100);
             thread::sleep(millis100);
         }
-        // if let Some(u) = e.update_args() {
-        //     app.update(&u);
-        // }
-        // if let Some(r) = e.release_args() {
-        //     app.release(&mut window, &r);
-        // }
-        // if let Some(p) = e.press_args() {
-        //     app.press(&p);
-        // }
-        // if let Some(c) = e.mouse_cursor_args() {
-        //     app.mouse_move(c);
-        // }
     }
 }
 
-struct App {
+
+struct Visualiizer {
     gl: GlGraphics,
-    started: bool,
     game: Game,
     pause: bool,
 }
 
-impl App {
-    fn new(gl: GlGraphics, player_num: usize) -> App {
+impl Visualiizer {
+    fn new(gl: GlGraphics, player_num: usize) -> Visualiizer {
         let mut game = Game::make_random_game(player_num);
         game.update();
-        App {
+        Visualiizer {
             gl: gl,
-            started: false,
             game: game,
             pause: false,
         }
     }
     fn render(&mut self, args: &RenderArgs) {
         (&mut self.gl).viewport(0, 0, args.width as i32, args.height as i32);
-        self.gl
-            .draw(args.viewport(),
-                  |_, gl| graphics::clear([1.0, 1.0, 1.0, 1.0], gl));
-        self.game.render(&mut self.gl, self.started, args);
+        self.gl.draw(args.viewport(), |_, gl| {
+            graphics::clear([1.0, 1.0, 1.0, 1.0], gl)
+        });
+        self.game.render(&mut self.gl, args);
     }
 }
