@@ -9,7 +9,6 @@ use piston::input::*;
 use glutin_window::GlutinWindow as Window;
 use opengl_graphics::{GlGraphics, OpenGL};
 mod scanner;
-mod xor128;
 mod gamemap;
 mod player;
 mod game_info;

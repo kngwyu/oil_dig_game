@@ -5,7 +5,6 @@ use glutin_window::GlutinWindow as Window;
 use opengl_graphics::{GlGraphics, OpenGL};
 use std::collections::BTreeMap;
 use gamemap::{Field, Coord};
-use xor128::Xor128;
 use rand::{self, Rng};
 
 const MOVES: [Coord; 5] = [Coord { x: 0, y: -1 },
