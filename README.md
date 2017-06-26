@@ -77,4 +77,4 @@ cargo run
 # サンプルAI
 
 現在player_ai/sample.ccのみ。
-そのうちruby版も追加します。
+ そのうちruby版も追加します。
