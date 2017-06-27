@@ -70,8 +70,13 @@ fn main() {
     let mut vis = Visualiizer::new(GlGraphics::new(opengl), player_num);
     let event_settings = EventSettings::new().ups(3).max_fps(10);
     let mut events = Events::new(event_settings);
+    let wait_time = time::Duration::from_millis(100);
     while let Some(e) = events.next(&mut window) {
         if let Some(r) = e.render_args() {
+            if vis.pause {
+                thread::sleep(wait_time);
+                continue;
+            }
             for &mut (ref mut player, id) in &mut players {
                 match *player {
                     PlayerType::CommandAI(ref mut cmd) => {
@@ -85,8 +90,10 @@ fn main() {
                 vis.game.update();
             }
             vis.render(&r);
-            let millis100 = time::Duration::from_millis(100);
-            thread::sleep(millis100);
+            thread::sleep(wait_time);
+        }
+        if let Some(p) = e.release_args() {
+            vis.release(&p);
         }
     }
 }
@@ -112,5 +119,16 @@ impl Visualiizer {
             graphics::clear([1.0, 1.0, 1.0, 1.0], gl)
         });
         self.game.render(&mut self.gl, args);
+    }
+    fn release(&mut self, button: &Button) {
+        match *button {
+            Button::Keyboard(key) => {
+                match key {
+                    Key::P => self.pause = if self.pause { false } else { true },
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
     }
 }
