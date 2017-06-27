@@ -61,6 +61,7 @@ fn main() {
         player_num
     };
     // ビジュアライザ起動
+
     let opengl = OpenGL::V3_2;
     let mut window: Window = WindowSettings::new(WINDOW_TITLE, [WINDOW_SIZE, WINDOW_SIZE])
         .opengl(opengl)
@@ -70,7 +71,7 @@ fn main() {
     let mut vis = Visualiizer::new(GlGraphics::new(opengl), player_num);
     let event_settings = EventSettings::new().ups(3).max_fps(10);
     let mut events = Events::new(event_settings);
-    let wait_time = time::Duration::from_millis(100);
+    let wait_time = time::Duration::from_millis(500);
     while let Some(e) = events.next(&mut window) {
         if let Some(r) = e.render_args() {
             if vis.pause {
@@ -78,6 +79,9 @@ fn main() {
                 continue;
             }
             for &mut (ref mut player, id) in &mut players {
+                if vis.explosing {
+                    break;
+                }
                 match *player {
                     PlayerType::CommandAI(ref mut cmd) => {
                         let s = vis.game.get_state_str(id);
@@ -87,9 +91,9 @@ fn main() {
                     }
                     _ => {}
                 }
-                vis.game.update();
+                vis.explosing |= vis.game.update();
             }
-            vis.render(&r);
+            vis.explosing &= vis.render(&r);
             thread::sleep(wait_time);
         }
         if let Some(p) = e.release_args() {
@@ -97,10 +101,12 @@ fn main() {
         }
     }
 }
+
 struct Visualiizer {
     gl: GlGraphics,
     game: Game,
     pause: bool,
+    explosing: bool,
 }
 
 impl Visualiizer {
@@ -111,14 +117,15 @@ impl Visualiizer {
             gl: gl,
             game: game,
             pause: false,
+            explosing: false,
         }
     }
-    fn render(&mut self, args: &RenderArgs) {
+    fn render(&mut self, args: &RenderArgs) -> bool {
         (&mut self.gl).viewport(0, 0, args.width as i32, args.height as i32);
-        self.gl.draw(args.viewport(), |_, gl| {
-            graphics::clear([1.0, 1.0, 1.0, 1.0], gl)
-        });
-        self.game.render(&mut self.gl, args);
+        self.gl
+            .draw(args.viewport(),
+                  |_, gl| graphics::clear([1.0, 1.0, 1.0, 1.0], gl));
+        self.game.render(&mut self.gl, args)
     }
     fn release(&mut self, button: &Button) {
         match *button {

@@ -19,7 +19,7 @@ fn get_action<R: Read>(resource: R) -> Action {
         }
         val if val == 2 => Action::PickBom,
         val if val == 3 => Action::DropBom,
-        _ => Action::Nop,
+        _ => Action::Move(4),
     }
 }
 
@@ -31,9 +31,9 @@ pub struct ProcHandler {
 impl ProcHandler {
     pub fn new(cmdstr: &str) -> ProcHandler {
         let my_proc = match Command::new(cmdstr)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn() {
+                  .stdin(Stdio::piped())
+                  .stdout(Stdio::piped())
+                  .spawn() {
             Ok(p) => p,
             Err(why) => panic!("couldn't exec command : {}", Error::description(&why)),
         };
