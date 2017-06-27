@@ -60,8 +60,6 @@ fn main() {
         }
         player_num
     };
-
-
     // ビジュアライザ起動
     let opengl = OpenGL::V3_2;
     let mut window: Window = WindowSettings::new(WINDOW_TITLE, [WINDOW_SIZE, WINDOW_SIZE])
@@ -75,8 +73,8 @@ fn main() {
     while let Some(e) = events.next(&mut window) {
         if let Some(r) = e.render_args() {
             for &mut (ref mut player, id) in &mut players {
-                match player {
-                    &mut PlayerType::CommandAI(ref mut cmd) => {
+                match *player {
+                    PlayerType::CommandAI(ref mut cmd) => {
                         let s = vis.game.get_state_str(id);
                         cmd.write(s);
                         let act = cmd.act();
@@ -92,8 +90,6 @@ fn main() {
         }
     }
 }
-
-
 struct Visualiizer {
     gl: GlGraphics,
     game: Game,

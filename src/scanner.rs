@@ -2,13 +2,12 @@ use std::error::Error;
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::str::{self, FromStr};
+
 pub struct Scanner<R> {
     bufread: BufReader<R>,
     id: usize,
     buf: Vec<u8>,
 }
-
-#[allow(dead_code)]
 impl<R: Read> Scanner<R> {
     pub fn new(resource: R) -> Scanner<R> {
         Scanner {
@@ -26,7 +25,7 @@ impl<R: Read> Scanner<R> {
         }
     }
     pub fn next<T: FromStr>(&mut self) -> Option<T> {
-        while self.buf.len() == 0 {
+        while self.buf.is_empty() {
             self.buf = match self.next_line() {
                 Some(r) => {
                     self.id = 0;
@@ -36,20 +35,19 @@ impl<R: Read> Scanner<R> {
             };
         }
         let l = self.id;
-        assert!(self.buf[l] != b' ');
+        assert_ne!(self.buf[l], b' ');
         let n = self.buf.len();
         let mut r = l;
         while r < n && self.buf[r] != b' ' {
             r += 1;
         }
-        let res = match str::from_utf8(&self.buf[l..r])
-                  .ok()
-                  .unwrap()
-                  .parse::<T>() {
+        let res = match str::from_utf8(&self.buf[l..r]).ok().unwrap().parse::<T>() {
             Ok(s) => Some(s),
             Err(_) => {
-                panic!("parse error, {:?}",
-                       String::from_utf8(self.buf[l..r].to_owned()))
+                panic!(
+                    "parse error, {:?}",
+                    String::from_utf8(self.buf[l..r].to_owned())
+                )
             }
         };
         while r < n && self.buf[r] == b' ' {
