@@ -71,11 +71,12 @@ cd ./oil_dig_game
 cargo run
 ```
 で動く
--
+
+- 更新は
 ```text
 git pull
 ```
-で更新できる
+
 ## Windows
 余裕があれば検証します
 
