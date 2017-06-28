@@ -18,7 +18,8 @@ const MOVES: [Coord; 5] = [
 pub struct Game {
     pub size: usize,
     player_num: usize,
-    player: Vec<Player>,
+    pub turn: usize,
+    pub player: Vec<Player>,
     oil_list: BTreeMap<Coord, i32>,
     bom_list: BTreeMap<Coord, BomCat>,
     field: Field<FieldState>,
@@ -46,6 +47,7 @@ impl Game {
         Game {
             size: size,
             player_num: player_num,
+            turn: 0,
             player: player,
             oil_list: BTreeMap::new(),
             bom_list: BTreeMap::new(),
@@ -56,7 +58,11 @@ impl Game {
             explosive_list: Vec::new(),
         }
     }
-    pub fn act(&mut self, player_id: usize, ac: Action) {
+    pub fn act(&mut self, player_id: usize, ac: Action) -> i32 {
+        if self.player[player_id].is_alive == false {
+            return 1;
+        }
+        let ret = 0;
         let cur = self.player[player_id].cd;
         match ac {
             Action::Move(id) => {
@@ -66,7 +72,7 @@ impl Game {
                         if DEBUG {
                             println!("Action wa Rejcected: Move, id: {}", player_id);
                         }
-                        return;
+                        return ret;
                     }
                     self.player[player_id].cd = nxt;
                     if let FieldState::Oil(g) = self.field[nxt] {
@@ -108,8 +114,10 @@ impl Game {
                 }
             }
         }
+        ret
     }
     pub fn update(&mut self) -> bool {
+        self.turn += 1;
         // 起爆判定 高速化は後でいいや...
         for i in 0..self.player_num {
             let ref mut p = self.player[i];
@@ -349,9 +357,9 @@ enum FieldState {
 }
 
 #[derive(Clone, Debug)]
-struct Player {
+pub struct Player {
     cd: Coord,
-    galon: i32,
+    pub galon: i32,
     bom: Option<i32>,
     is_alive: bool,
 }

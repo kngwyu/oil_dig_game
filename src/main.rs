@@ -3,7 +3,7 @@ extern crate graphics;
 extern crate glutin_window;
 extern crate opengl_graphics;
 extern crate rand;
-use piston::window::WindowSettings;
+use piston::window::{WindowSettings, AdvancedWindow};
 use piston::event_loop::*;
 use piston::input::*;
 use glutin_window::GlutinWindow as Window;
@@ -83,9 +83,12 @@ fn main() {
     while let Some(e) = events.next(&mut window) {
         if let Some(r) = e.render_args() {
             if vis.pause {
+                window.set_title(format!("{}(pause)", WINDOW_TITLE));
                 thread::sleep(wait_time);
                 continue;
             }
+            window.set_title(format!("{} turn: {}", WINDOW_TITLE, vis.game.turn));
+            let mut end_cnt = 0;
             for &mut (ref mut player, id) in &mut players {
                 if vis.explosing {
                     break;
@@ -95,11 +98,14 @@ fn main() {
                         let s = vis.game.get_state_str(id);
                         cmd.write(s);
                         let act = cmd.act();
-                        vis.game.act(id, act);
+                        end_cnt += vis.game.act(id, act);
                     }
                     _ => {}
                 }
                 vis.explosing |= vis.game.update();
+            }
+            if end_cnt as usize == player_num {
+                break;
             }
             vis.explosing &= vis.render(&r);
             thread::sleep(wait_time);
@@ -107,6 +113,9 @@ fn main() {
         if let Some(p) = e.release_args() {
             vis.release(&p);
         }
+    }
+    for p in &vis.game.player {
+        println!("{}", p.galon);
     }
 }
 
