@@ -57,9 +57,6 @@ impl Game {
         }
     }
     pub fn act(&mut self, player_id: usize, ac: Action) {
-        if DEBUG {
-            println!("{:?}, {}", ac, player_id);
-        }
         let cur = self.player[player_id].cd;
         match ac {
             Action::Move(id) => {

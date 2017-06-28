@@ -94,9 +94,7 @@ fn main() {
                     PlayerType::CommandAI(ref mut cmd) => {
                         let s = vis.game.get_state_str(id);
                         cmd.write(s);
-                        println!("Wait");
                         let act = cmd.act();
-                        println!("WaitEnd");
                         vis.game.act(id, act);
                     }
                     _ => {}

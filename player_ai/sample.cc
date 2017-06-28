@@ -49,6 +49,7 @@ struct FieldVal {
 struct GameInfo {
     vector<vector<FieldVal>> field;
     vector<vector<bool>> danger;
+    vector<pair<int, int>> oil_list;
     int size;
     int galon;
     int px;
@@ -73,15 +74,16 @@ struct GameInfo {
         }
         int oil_num, bom_num;
         cin >> oil_num;
+        oil_list.clear();
         for (int i = 0; i < oil_num; ++i) {
             int x, y, g;
             cin >> x >> y >> g;
             field[y][x].type = FieldState::Galon;
             field[y][x].val = g;
+            oil_list.emplace_back(x, y);
         }
         cin >> bom_num;
-        for (int i = 0; i < bom_num; ++i) {
-            
+        for (int i = 0; i < bom_num; ++i) {            
             int x, y, k;
             cin >> x >> y >> k;
             // 自分が設置した爆弾はどうでもいい
@@ -114,12 +116,16 @@ struct GameInfo {
     void move_right() {
         Actions::move(2);
     }
-    // (aim_x, aim_y) から 他の全ての点への最短距離を計算
-    vector<vector<int>> make_dist(int aim_x, int aim_y) {
+    // あるoilからの最短距離
+    vector<vector<int>> make_oil_dist() {
         vector<vector<int>> dist(size, vector<int>(size, INF));
         queue<pair<int, int>> que;
-        dist[aim_y][aim_x] = 0;
-        que.emplace(aim_x, aim_y);
+        for (auto p : oil_list) {
+            int x, y;
+            tie(x, y) = p;
+            dist[y][x] = 0;
+            que.emplace(x, y);
+        }
         while (!que.empty()) {
             int cx, cy;
             tie(cx, cy) = que.front(); que.pop();
@@ -137,22 +143,7 @@ struct GameInfo {
     // 幅優先探索で最も近い石油を探す
     // グリッドグラフは二点間の距離が必ず1なので 経由したノード数+1 = 最短距離が成り立つ
     void move_greedy() {
-        auto dist_from_now = make_dist(px, py);
-        int mi = INF;
-        int aim_x = 0;
-        int aim_y = 0;
-        for (int i = 0; i < size; ++i) {
-            for (int j = 0; j < size; ++j) {
-                if (field[i][j].type == FieldState::Galon) {
-                    if (dist_from_now[i][j] < mi) {
-                        mi = dist_from_now[i][j];
-                        aim_x = j;
-                        aim_y = i;
-                    }
-                }
-            }
-        }
-        auto dist = make_dist(aim_x, aim_y);
+        auto oil_dist = make_oil_dist();
         for (int i = 0; i < 4; ++i) {
             int nx = px + DX[i];
             int ny = py + DY[i];
@@ -160,7 +151,7 @@ struct GameInfo {
                 continue;
             // 移動して最短距離が短くなるような点に移動する
             if (danger[ny][nx]) continue;
-            if (dist[ny][nx] < dist[py][px]) {
+            if (oil_dist[ny][nx] < oil_dist[py][px]) {
                 Actions::move(i);
                 return;
             }
