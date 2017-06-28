@@ -18,4 +18,4 @@ pub const FIELD_SIZE_MAX: usize = 30;
 pub const MIN_OIL: i32 = 10;
 pub const MAX_OIL: i32 = 100;
 pub const MIN_BOM: i32 = 1;
-pub const MAX_BOM: i32 = 5;
+pub const MAX_BOM: i32 = 3;

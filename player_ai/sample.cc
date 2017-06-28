@@ -89,8 +89,8 @@ struct GameInfo {
             field[y][x].type = k == -1 ? FieldState::BomSafe : FieldState::BomReady;
             field[y][x].val = k;
             if (k == -1) continue;
-            for (int dx = -3; dx <= 3; ++dx) {
-                for (int dy = -3; dy <= 3; ++dy) {
+            for (int dx = -1; dx <= 1; ++dx) {
+                for (int dy = -1; dy <= 1; ++dy) {
                     int nx = px + dx, ny = py + dy;
                     if (nx < 0 || ny < 0 || nx >= size || ny >= size)
                         continue;
