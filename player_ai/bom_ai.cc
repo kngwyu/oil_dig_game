@@ -1,4 +1,4 @@
-// 一番近い石油を掘りに行くAI
+// ひたすら爆弾をとりに行くAI
 #include <iostream>
 #include <vector>
 #include <string>
@@ -93,10 +93,10 @@ struct GameInfo {
             Actions::drop_bom();
             bom_period = -1;
         } else if (bom_period == -1 && field[py][px].type == FieldState::BomSafe) {
-            bom_period = 5;
+            bom_period = 1;
             Actions::pick_bom();
         } else {
-            move_greedy();
+            search_bom();
         }
         //move_right();
     }
@@ -124,16 +124,14 @@ struct GameInfo {
         }
         return dist;
     }
-    // 幅優先探索で最も近い石油を探す
-    // グリッドグラフは二点間の距離が必ず1なので 経由したノード数+1 = 最短距離が成り立つ
-    void move_greedy() {
+    void search_bom() {
         auto dist_from_now = make_dist(px, py);
         int mi = INF;
         int aim_x = 0;
         int aim_y = 0;
         for (int i = 0; i < size; ++i) {
             for (int j = 0; j < size; ++j) {
-                if (field[i][j].type == FieldState::Galon) {
+                if (field[i][j].type == FieldState::BomSafe) {
                     if (dist_from_now[i][j] < mi) {
                         mi = dist_from_now[i][j];
                         aim_x = j;

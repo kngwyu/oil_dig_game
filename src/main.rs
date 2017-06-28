@@ -24,15 +24,23 @@ fn main() {
     let mut players = Vec::new();
     let player_num = if DEBUG {
         let pnum_debug = 4;
-        let mut c = Command::new("g++")
-            .arg("./player_ai/sample.cc")
-            .arg("-std=c++11")
-            .spawn()
-            .expect("failed to comple");
-        let ecode = c.wait().expect("failed to wait on child");
-        assert!(ecode.success(), "compile error");
+        // compile
+        let ai_name = ["sample", "bom_ai"];
+        for s in ai_name.iter() {
+            let fname = format!("{}{}{}", "./player_ai/", s, ".cc");
+            let mut ai = Command::new("g++")
+                .arg(fname)
+                .arg("-std=c++11")
+                .arg("-o")
+                .arg(s)
+                .spawn()
+                .expect("failed to comple");
+            let ecode = ai.wait().expect("failed to wait on child");
+            assert!(ecode.success(), "compile error");
+        }
         for i in 0..pnum_debug {
-            let p = PlayerType::CommandAI(ProcHandler::new("./a.out"));
+            let ai = format!("{}{}", "./", ai_name[i % 2]);
+            let p = PlayerType::CommandAI(ProcHandler::new(&ai));
             players.push((p, i));
         }
         pnum_debug
@@ -71,7 +79,7 @@ fn main() {
     let mut vis = Visualiizer::new(GlGraphics::new(opengl), player_num);
     let event_settings = EventSettings::new().ups(3).max_fps(10);
     let mut events = Events::new(event_settings);
-    let wait_time = time::Duration::from_millis(500);
+    let wait_time = time::Duration::from_millis(200);
     while let Some(e) = events.next(&mut window) {
         if let Some(r) = e.render_args() {
             if vis.pause {
@@ -122,9 +130,9 @@ impl Visualiizer {
     }
     fn render(&mut self, args: &RenderArgs) -> bool {
         (&mut self.gl).viewport(0, 0, args.width as i32, args.height as i32);
-        self.gl
-            .draw(args.viewport(),
-                  |_, gl| graphics::clear([1.0, 1.0, 1.0, 1.0], gl));
+        self.gl.draw(args.viewport(), |_, gl| {
+            graphics::clear([1.0, 1.0, 1.0, 1.0], gl)
+        });
         self.game.render(&mut self.gl, args)
     }
     fn release(&mut self, button: &Button) {

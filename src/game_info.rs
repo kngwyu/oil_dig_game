@@ -5,11 +5,13 @@ use gamemap::{Field, Coord};
 use consts::*;
 use rand::{self, Rng};
 use std::cmp::*;
-const MOVES: [Coord; 5] = [Coord { x: 0, y: -1 },
-                           Coord { x: -1, y: 0 },
-                           Coord { x: 1, y: 0 },
-                           Coord { x: 0, y: 1 },
-                           Coord { x: 0, y: 0 }];
+const MOVES: [Coord; 5] = [
+    Coord { x: 0, y: -1 },
+    Coord { x: -1, y: 0 },
+    Coord { x: 1, y: 0 },
+    Coord { x: 0, y: 1 },
+    Coord { x: 0, y: 0 },
+];
 
 // 爆弾の実装はまた今度...
 #[derive(Debug)]
@@ -23,9 +25,8 @@ pub struct Game {
     oil_num: usize,
     bom_num: usize,
     player_bom: usize,
-    explosion_list: Vec<(Coord, i32, i32)>,
+    explosive_list: Vec<Explosive>,
 }
-
 fn cd_ok(cd: Coord, s: usize) -> bool {
     cd.x >= 0 && cd.y >= 0 && cd.x < s as i32 && cd.y < s as i32
 }
@@ -52,7 +53,7 @@ impl Game {
             oil_num: oil_num,
             bom_num: bom_num,
             player_bom: 0,
-            explosion_list: Vec::new(),
+            explosive_list: Vec::new(),
         }
     }
     pub fn act(&mut self, player_id: usize, ac: Action) {
@@ -110,7 +111,6 @@ impl Game {
     }
     pub fn update(&mut self) -> bool {
         // 起爆判定 高速化は後でいいや...
-        let mut res = false;
         for i in 0..self.player_num {
             let ref mut p = self.player[i];
             let cur = p.cd;
@@ -128,8 +128,13 @@ impl Game {
                             }
                             self.field[nxt] = FieldState::None;
                             self.bom_list.remove(&nxt);
-                            self.explosion_list.push((nxt, dist, 0));
-                            res = true;
+                            let expl = Explosive {
+                                cd: nxt,
+                                dist: dist,
+                                turn: 0,
+                                owner: id,
+                            };
+                            self.explosive_list.push(expl);
                         }
                     }
                 }
@@ -168,7 +173,7 @@ impl Game {
             self.bom_list.insert(cd, bom);
             self.field[cd] = FieldState::Bom(bom);
         }
-        res
+        !self.explosive_list.is_empty()
     }
 
     pub fn get_state_str(&self, player_id: usize) -> String {
@@ -247,21 +252,22 @@ impl Game {
                 continue;
             }
             let fx = (self.player[i].cd.x * bsize as i32) as f64 +
-                     if i & 1 == 1 { offset } else { 0.0 };
+                if i & 1 == 1 { offset } else { 0.0 };
             let fy = (self.player[i].cd.y * bsize as i32) as f64 + if i > 1 { offset } else { 0.0 };
-            gl.draw(args.viewport(),
-                    |c, gl| { rectangle(USER_COLOR[i], block, c.transform.trans(fx, fy), gl); });
+            gl.draw(args.viewport(), |c, gl| {
+                rectangle(USER_COLOR[i], block, c.transform.trans(fx, fy), gl);
+            });
         }
-        if self.explosion_list.is_empty() {
+        if self.explosive_list.is_empty() {
             return false;
         }
 
         let block = rectangle::square(0.0, 0.0, bsize as f64);
         let mut explist_nxt = Vec::new();
-        for &(cd, dist, turn) in &self.explosion_list {
-            for dx in -turn..turn + 1 {
-                for dy in -turn..turn + 1 {
-                    let cur = cd + Coord::new(dx, dy);
+        for e in &self.explosive_list {
+            for dx in -e.turn..e.turn + 1 {
+                for dy in -e.turn..e.turn + 1 {
+                    let cur = e.cd + Coord::new(dx, dy);
                     let fx = (cur.x * bsize as i32) as f64;
                     let fy = (cur.y * bsize as i32) as f64;
                     if self.field.id_ok(&cur) {
@@ -272,26 +278,39 @@ impl Game {
                             }
                             _ => self.field[cur],
                         };
-                        for ref mut p in &mut self.player {
-                            if p.cd == cur {
+                        for i in 0..self.player_num {
+                            let ref mut p = self.player[i];
+                            if p.is_alive && p.cd == cur && e.owner != i {
                                 p.is_alive = false;
                                 println!("@_@ Death, {:?}", p.cd);
                             }
                         }
-                        gl.draw(args.viewport(),
-                                |c, gl| { rectangle(RED, block, c.transform.trans(fx, fy), gl); });
+                        gl.draw(args.viewport(), |c, gl| {
+                            rectangle(RED, block, c.transform.trans(fx, fy), gl);
+                        });
                     }
                 }
             }
-            if dist > turn {
-                explist_nxt.push((cd, dist, turn + 1));
+            if e.dist > e.turn {
+                let mut ne = e.clone();
+                ne.turn += 1;
+                explist_nxt.push(ne);
             }
         }
-        self.explosion_list = explist_nxt;
-        self.explosion_list.is_empty()
+        self.explosive_list = explist_nxt;
+        !self.explosive_list.is_empty()
     }
 }
 
+
+// 爆発物(爆弾だけではない)
+#[derive(Debug, Clone)]
+struct Explosive {
+    cd: Coord,
+    dist: i32,
+    turn: i32,
+    owner: usize,
+}
 
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
