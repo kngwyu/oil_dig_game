@@ -91,7 +91,7 @@ struct GameInfo {
             if (k == -1) continue;
             for (int dx = -1; dx <= 1; ++dx) {
                 for (int dy = -1; dy <= 1; ++dy) {
-                    int nx = px + dx, ny = py + dy;
+                    int nx = dx + x, ny = dy + y;
                     if (nx < 0 || ny < 0 || nx >= size || ny >= size)
                         continue;
                     danger[ny][nx] = true;
