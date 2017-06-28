@@ -128,7 +128,6 @@ struct GameInfo {
                 if (nx < 0 || ny < 0 || nx >= size || ny >= size)
                     continue;
                 if (dist[ny][nx] != INF) continue;
-                if (danger[ny][nx]) continue;
                 dist[ny][nx] = dist[cy][cx] + 1;
                 que.emplace(nx, ny);
             }
@@ -160,6 +159,7 @@ struct GameInfo {
             if (nx < 0 || ny < 0 || nx >= size || ny >= size)
                 continue;
             // 移動して最短距離が短くなるような点に移動する
+            if (danger[ny][nx]) continue;
             if (dist[ny][nx] < dist[py][px]) {
                 Actions::move(i);
                 return;
