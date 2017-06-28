@@ -217,8 +217,17 @@ impl Game {
         });
         let block = rectangle::square(0.0, 0.0, bsize as f64);
         let fb = bsize as f64;
-        let triangle: [[f64; 2]; 3] = [[0.5 * fb, 0.0], [0.0, fb], [fb, fb]];
-
+        // let triangle: [[f64; 2]; 3] = [[0.5 * fb, 0.0], [0.0, fb], [fb, fb]];
+        let cat1: [[f64; 2]; 3] = [[0.3 * fb, 0.0], [0.0, 0.7 * fb], [0.4 * fb, 0.4 * fb]];
+        let cat2: [[f64; 2]; 3] = [[0.7 * fb, 0.0], [fb, 0.7 * fb], [0.6 * fb, 0.4 * fb]];
+        let cat3: [[f64; 2]; 6] = [
+            [0.4 * fb, 0.4 * fb],
+            [0.0, 0.7 * fb],
+            [0.0, fb],
+            [fb, fb],
+            [fb, 0.7 * fb],
+            [0.6 * fb, 0.4 * fb],
+        ];
         for y in 0..self.size {
             for x in 0..self.size {
                 let fx = (x * bsize) as f64;
@@ -238,7 +247,13 @@ impl Game {
                             BomCat::Safe(_) => BLUE,
                         };
                         gl.draw(args.viewport(), |c, gl| {
-                            polygon(color, &triangle, c.transform.trans(fx, fy), gl);
+                            polygon(color, &cat1, c.transform.trans(fx, fy), gl);
+                        });
+                        gl.draw(args.viewport(), |c, gl| {
+                            polygon(color, &cat2, c.transform.trans(fx, fy), gl);
+                        });
+                        gl.draw(args.viewport(), |c, gl| {
+                            polygon(color, &cat3, c.transform.trans(fx, fy), gl);
                         });
                     }
                     _ => {}
