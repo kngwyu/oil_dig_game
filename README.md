@@ -79,7 +79,7 @@ https://github.com/PistonDevelopers/piston
 
 - https://www.rust-lang.org/ja-JP/ を見てrustをいれる
 - デフォルトで$HOME以下にインストールされるので管理者権限は不要(= ECCSでも問題ない)
-- curl ... してPATHに~/.cargo/binを設定すればrustは動く
+- curl ... してsource ~/.cargo/envすればRustは動く(本当は.bashrcに書いた方がいいけどECCSだといらないかも)
 - ゲーム本体は
 ```text
 git clone https://github.com/kngwyu/oil_dig_game.git

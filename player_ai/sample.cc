@@ -48,6 +48,7 @@ struct FieldVal {
 };
 struct GameInfo {
     vector<vector<FieldVal>> field;
+    vector<vector<bool>> danger;
     int size;
     int galon;
     int px;
@@ -59,6 +60,7 @@ struct GameInfo {
     void action(int s) {
         size = s;
         field.assign(s, vector<FieldVal>(s));
+        danger.assign(s, vector<bool>(s));
         int my_id;
         cin >> player_num >> my_id;
         for (int i = 0; i < player_num; ++i) {
@@ -79,14 +81,23 @@ struct GameInfo {
         }
         cin >> bom_num;
         for (int i = 0; i < bom_num; ++i) {
+            
             int x, y, k;
             cin >> x >> y >> k;
             // 自分が設置した爆弾はどうでもいい
             if (k == my_id) continue;
             field[y][x].type = k == -1 ? FieldState::BomSafe : FieldState::BomReady;
             field[y][x].val = k;
+            if (k == -1) continue;
+            for (int dx = -5; dx <= 5; ++dx) {
+                for (int dy = -5; dy <= 5; ++dy) {
+                    int nx = px + dx, ny = py + dy;
+                    if (nx < 0 || ny < 0 || nx >= size || ny >= size)
+                        continue;
+                    danger[ny][nx] = true;
+                }
+            }
         }
-
         // 何ターンか所持したら落とす
         if (bom_period > 0) --bom_period;
         if (bom_period == 0) {
@@ -117,7 +128,7 @@ struct GameInfo {
                 if (nx < 0 || ny < 0 || nx >= size || ny >= size)
                     continue;
                 if (dist[ny][nx] != INF) continue;
-                if (field[ny][nx].type == FieldState::BomReady) continue;
+                if (danger[ny][nx]) continue;
                 dist[ny][nx] = dist[cy][cx] + 1;
                 que.emplace(nx, ny);
             }
