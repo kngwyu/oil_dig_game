@@ -25,7 +25,7 @@ fn main() {
     let player_num = if DEBUG {
         let pnum_debug = 4;
         // compile
-        let ai_name = ["sample", "bom_ai"];
+        let ai_name = ["sample", "bom_ai", "killer_ai"];
         for s in ai_name.iter() {
             let fname = format!("{}{}{}", "./player_ai/", s, ".cc");
             let mut ai = Command::new("g++")
@@ -39,7 +39,7 @@ fn main() {
             assert!(ecode.success(), "compile error");
         }
         for i in 0..pnum_debug {
-            let ai = format!("{}{}", "./", ai_name[i % 2]);
+            let ai = format!("{}{}", "./", ai_name[i % 3]);
             let p = PlayerType::CommandAI(ProcHandler::new(&ai));
             players.push((p, i));
         }

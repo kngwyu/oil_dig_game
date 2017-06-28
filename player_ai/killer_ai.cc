@@ -1,4 +1,4 @@
-// 一番近い石油を掘りに行くAI
+// ひたすら爆弾をとりに行くAI
 #include <iostream>
 #include <vector>
 #include <string>
@@ -46,15 +46,22 @@ struct FieldVal {
     int val;
     explicit FieldVal(): type(FieldState::None), val(0) {}
 };
+
+enum struct DistType {
+    OtherPlayer,
+    Bom,
+};
 struct GameInfo {
     vector<vector<FieldVal>> field;
+    vector<pair<int, int>> bom_list;
+    vector<pair<int, int>> others_list;
     vector<vector<bool>> danger;
-    vector<pair<int, int>> oil_list;
     int size;
     int galon;
     int px;
     int py;
     int player_num;
+    int my_id;
     int bom_period;
     explicit GameInfo()
             : field(), size(0), galon(0), px(0), py(0), player_num(0), bom_period(-1) {}
@@ -62,37 +69,41 @@ struct GameInfo {
         size = s;
         field.assign(s, vector<FieldVal>(s));
         danger.assign(s, vector<bool>(s));
-        int my_id;
         cin >> player_num >> my_id;
+        others_list.clear();
         for (int i = 0; i < player_num; ++i) {
-            int a, b, c;
-            cin >> a >> b >> c;
+            int x, y, id;
+            cin >> x >> y >> id;
             if (i == my_id) {
-                px = a;
-                py = b;
+                px = x;
+                py = y;
+            } else {
+                others_list.emplace_back(x, y);
             }
         }
         int oil_num, bom_num;
         cin >> oil_num;
-        oil_list.clear();
         for (int i = 0; i < oil_num; ++i) {
             int x, y, g;
             cin >> x >> y >> g;
             field[y][x].type = FieldState::Galon;
             field[y][x].val = g;
-            oil_list.emplace_back(x, y);
         }
         cin >> bom_num;
-        for (int i = 0; i < bom_num; ++i) {            
+        bom_list.clear();
+        for (int i = 0; i < bom_num; ++i) {
             int x, y, k;
             cin >> x >> y >> k;
             // 自分が設置した爆弾はどうでもいい
             if (k == my_id) continue;
             field[y][x].type = k == -1 ? FieldState::BomSafe : FieldState::BomReady;
             field[y][x].val = k;
-            if (k == -1) continue;
-            for (int dx = -3; dx <= 3; ++dx) {
-                for (int dy = -3; dy <= 3; ++dy) {
+            if (k == -1) {
+                bom_list.emplace_back(x, y);
+                continue;
+            }
+            for (int dx = -1; dx <= 1; ++dx) {
+                for (int dy = -1; dy <= 1; ++dy) {
                     int nx = dx + x, ny = dy + y;
                     if (nx < 0 || ny < 0 || nx >= size || ny >= size)
                         continue;
@@ -106,21 +117,23 @@ struct GameInfo {
             Actions::drop_bom();
             bom_period = -1;
         } else if (bom_period == -1 && field[py][px].type == FieldState::BomSafe) {
-            bom_period = 5;
+            bom_period = 3;
             Actions::pick_bom();
+        } else if (bom_period > 0) {
+            search_player();
         } else {
-            move_greedy();
+            search_bom();
         }
-        //move_right();
     }
     void move_right() {
         Actions::move(2);
     }
-    // あるoilからの最短距離
-    vector<vector<int>> make_oil_dist() {
+    // あるリソースから 他の全ての点への最短距離を計算
+    vector<vector<int>> make_dist(DistType dtype) {
         vector<vector<int>> dist(size, vector<int>(size, INF));
         queue<pair<int, int>> que;
-        for (auto p : oil_list) {
+        const auto& resource = dtype == DistType::Bom ? bom_list : others_list;
+        for (auto p : resource) {
             int x, y;
             tie(x, y) = p;
             dist[y][x] = 0;
@@ -134,16 +147,16 @@ struct GameInfo {
                 if (nx < 0 || ny < 0 || nx >= size || ny >= size)
                     continue;
                 if (dist[ny][nx] != INF) continue;
+                if (field[ny][nx].type == FieldState::BomReady) continue;
                 dist[ny][nx] = dist[cy][cx] + 1;
                 que.emplace(nx, ny);
             }
         }
         return dist;
     }
-    // 幅優先探索で最も近い石油を探す
-    // グリッドグラフは二点間の距離が必ず1なので 経由したノード数+1 = 最短距離が成り立つ
-    void move_greedy() {
-        auto oil_dist = make_oil_dist();
+    // 最も近い爆弾を探す
+    void search_bom() {
+        auto bom_dist = make_dist(DistType::Bom);
         for (int i = 0; i < 4; ++i) {
             int nx = px + DX[i];
             int ny = py + DY[i];
@@ -151,7 +164,24 @@ struct GameInfo {
                 continue;
             // 移動して最短距離が短くなるような点に移動する
             if (danger[ny][nx]) continue;
-            if (oil_dist[ny][nx] < oil_dist[py][px]) {
+            if (bom_dist[ny][nx] < bom_dist[py][px]) {
+                Actions::move(i);
+                return;
+            }
+        }
+        Actions::nop();
+    }
+    // 最も近いプレイヤーを探す
+    void search_player() {
+        auto p_dist = make_dist(DistType::Bom);
+        for (int i = 0; i < 4; ++i) {
+            int nx = px + DX[i];
+            int ny = py + DY[i];
+            if (nx < 0 || ny < 0 || nx >= size || ny >= size)
+                continue;
+            // 移動して最短距離が短くなるような点に移動する
+            if (danger[ny][nx]) continue;
+            if (p_dist[ny][nx] < p_dist[py][px]) {
                 Actions::move(i);
                 return;
             }

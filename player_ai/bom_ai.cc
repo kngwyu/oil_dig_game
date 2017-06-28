@@ -98,7 +98,6 @@ struct GameInfo {
         } else {
             search_bom();
         }
-        //move_right();
     }
     void move_right() {
         Actions::move(2);

@@ -11,7 +11,10 @@ pub enum PlayerType {
 
 fn get_action<R: Read>(resource: R) -> Action {
     let mut sc = Scanner::new(resource);
-    let act: usize = sc.ne();
+    let act: usize = match sc.next() {
+        Some(n) => n,
+        None => panic!("たぶんAIがセグフォしてる"),
+    };
     match act {
         val if val == 1 => {
             let moveid: usize = sc.ne();
@@ -31,9 +34,9 @@ pub struct ProcHandler {
 impl ProcHandler {
     pub fn new(cmdstr: &str) -> ProcHandler {
         let my_proc = match Command::new(cmdstr)
-                  .stdin(Stdio::piped())
-                  .stdout(Stdio::piped())
-                  .spawn() {
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn() {
             Ok(p) => p,
             Err(why) => panic!("couldn't exec command : {}", Error::description(&why)),
         };

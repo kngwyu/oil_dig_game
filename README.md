@@ -98,5 +98,5 @@ git pull
 
 # サンプルAI
 
-現在player_ai/sample.ccのみ。
+現在player_ai/sample.cc, bom_ai.cc, killer_ai.ccのみ。
  そのうちruby版も追加します。
