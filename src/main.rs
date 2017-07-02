@@ -3,10 +3,12 @@ extern crate graphics;
 extern crate glutin_window;
 extern crate opengl_graphics;
 extern crate rand;
+#[macro_use]
+extern crate conrod;
 use piston::window::{WindowSettings, AdvancedWindow};
 use piston::event_loop::*;
 use piston::input::*;
-use glutin_window::GlutinWindow as Window;
+use glutin_window::GlutinWindow;
 use opengl_graphics::{GlGraphics, OpenGL};
 mod scanner;
 mod gamemap;
@@ -20,7 +22,9 @@ use consts::*;
 use std::time;
 use std::thread;
 use std::process::*;
+
 fn main() {
+    let mut child = thread::spawn(move || {make_menu()});
     let mut players = Vec::new();
     let player_num = if DEBUG {
         let pnum_debug = 4;
@@ -68,10 +72,10 @@ fn main() {
         }
         player_num
     };
-    // ビジュアライザ起動
 
+    // ビジュアライザ起動
     let opengl = OpenGL::V3_2;
-    let mut window: Window = WindowSettings::new(WINDOW_TITLE, [WINDOW_SIZE, WINDOW_SIZE])
+    let mut window: GlutinWindow = WindowSettings::new(WINDOW_TITLE, [WINDOW_SIZE, WINDOW_SIZE])
         .opengl(opengl)
         .exit_on_esc(true)
         .build()
@@ -110,13 +114,14 @@ fn main() {
             vis.explosing &= vis.render(&r);
             thread::sleep(wait_time);
         }
-        if let Some(p) = e.release_args() {
-            vis.release(&p);
-        }
+        // if let Some(p) = e.release_args() {
+        //     vis.release(&p);
+        // }
     }
     for p in &vis.game.player {
         println!("{}", p.galon);
     }
+    child.join();
 }
 
 struct Visualiizer {
@@ -155,4 +160,144 @@ impl Visualiizer {
             _ => {}
         }
     }
+}
+
+
+widget_ids!{
+    struct Ids {canvas, list}
+}
+
+use conrod::backend::glium::glium;
+use conrod::backend::glium::glium::{DisplayBuild, Surface};
+fn make_menu() {
+    const WIDTH: u32 = 400;
+    const HEIGHT: u32 = 300;
+
+    let display = glium::glutin::WindowBuilder::new()
+        .with_vsync()
+        .with_dimensions(WIDTH, HEIGHT)
+        .with_title("PlotPath Demo")
+        .with_multisampling(4)
+        .build_glium()
+        .unwrap();
+    let mut ui = conrod::UiBuilder::new([WIDTH as f64, HEIGHT as f64]).build();
+    let ids = Ids::new(ui.widget_id_generator());
+    ui.fonts.insert_from_file(FONT_PATH).unwrap();
+    let mut renderer = conrod::backend::glium::Renderer::new(&display).unwrap();
+    let image_map = conrod::image::Map::<glium::texture::Texture2d>::new();
+    let mut event_loop = MyEventLoop::new();
+    let mut list = vec![true; 16];
+        'main: loop {
+
+            // Handle all events.
+            for event in event_loop.next(&display) {
+
+                // Use the `winit` backend feature to convert the winit event to a conrod one.
+                if let Some(event) = conrod::backend::winit::convert(event.clone(), &display) {
+                    ui.handle_event(event);
+                    event_loop.needs_update();
+                }
+
+                match event {
+                    // Break from the loop upon `Escape`.
+                    glium::glutin::Event::KeyboardInput(_, _, Some(glium::glutin::VirtualKeyCode::Escape)) |
+                    glium::glutin::Event::Closed =>
+                        break 'main,
+                    _ => {},
+                }
+            }
+
+            set_ui(ui.set_widgets(), &mut list, &ids);
+
+            // Render the `Ui` and then display it on the screen.
+            if let Some(primitives) = ui.draw_if_changed() {
+                renderer.fill(&display, primitives, &image_map);
+                let mut target = display.draw();
+                target.clear_color(0.0, 0.0, 0.0, 1.0);
+                renderer.draw(&display, &mut target, &image_map).unwrap();
+                target.finish().unwrap();
+            }
+        }
+}
+
+fn set_ui(ref mut ui: conrod::UiCell, list: &mut [bool], ids: &Ids) {
+    use conrod::{widget, Colorable, Labelable, Positionable, Sizeable, Widget};
+
+    widget::Canvas::new()
+        .color(conrod::color::DARK_CHARCOAL)
+        .set(ids.canvas, ui);
+
+    let (mut items, scrollbar) = widget::List::flow_down(list.len())
+        .item_size(50.0)
+        .scrollbar_on_top()
+        .middle_of(ids.canvas)
+        .wh_of(ids.canvas)
+        .set(ids.list, ui);
+
+    while let Some(item) = items.next(ui) {
+        let i = item.i;
+        let label = format!("item {}: {}", i, list[i]);
+        let toggle = widget::Toggle::new(list[i])
+            .label(&label)
+            .label_color(conrod::color::WHITE)
+            .color(conrod::color::LIGHT_BLUE);
+        for v in item.set(toggle, ui) {
+            list[i] = v;
+        }
+    }
+
+    if let Some(s) = scrollbar {
+        s.set(ui)
+    }
+}
+
+pub struct MyEventLoop {
+    ui_needs_update: bool,
+    last_update: std::time::Instant,
+}
+
+impl MyEventLoop {
+
+    pub fn new() -> Self {
+        MyEventLoop {
+            last_update: std::time::Instant::now(),
+            ui_needs_update: true,
+        }
+    }
+
+    /// Produce an iterator yielding all available events.
+    pub fn next(&mut self, display: &glium::Display) -> Vec<glium::glutin::Event> {
+        // We don't want to loop any faster than 60 FPS, so wait until it has been at least 16ms
+        // since the last yield.
+        let last_update = self.last_update;
+        let sixteen_ms = std::time::Duration::from_millis(16);
+        let duration_since_last_update = std::time::Instant::now().duration_since(last_update);
+        if duration_since_last_update < sixteen_ms {
+            std::thread::sleep(sixteen_ms - duration_since_last_update);
+        }
+
+        // Collect all pending events.
+        let mut events = Vec::new();
+        events.extend(display.poll_events());
+
+        // If there are no events and the `Ui` does not need updating, wait for the next event.
+        if events.is_empty() && !self.ui_needs_update {
+            events.extend(display.wait_events().next());
+        }
+
+        self.ui_needs_update = false;
+        self.last_update = std::time::Instant::now();
+
+        events
+    }
+
+    /// Notifies the event loop that the `Ui` requires another update whether or not there are any
+    /// pending events.
+    ///
+    /// This is primarily used on the occasion that some part of the `Ui` is still animating and
+    /// requires further updates to do so.
+    pub fn needs_update(&mut self) {
+        self.ui_needs_update = true;
+    }
+
 }

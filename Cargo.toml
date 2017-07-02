@@ -9,3 +9,7 @@ piston2d-graphics = "0.21.1"
 piston2d-opengl_graphics = "0.44.0"
 pistoncore-glutin_window = "0.37.0"
 rand = "0.3.15"
+
+[dependencies.conrod]
+version = "0.53.0"       
+features = ["winit", "glium"]

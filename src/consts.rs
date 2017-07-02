@@ -3,6 +3,9 @@
 // デバッグ
 pub const DEBUG: bool = true;
 
+// GUI関連
+
+pub const FONT_PATH: &'static str = "/usr/share/fonts/TTF/migu-1m-regular.ttf";
 // 窓関連
 pub const WINDOW_SIZE: u32 = 600;
 pub const WINDOW_TITLE: &'static str = "Oil Dig Game";
