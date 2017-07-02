@@ -92,8 +92,8 @@ struct GameInfo {
         cin >> bom_num;
         bom_list.clear();
         for (int i = 0; i < bom_num; ++i) {
-            int x, y, k;
-            cin >> x >> y >> k;
+            int x, y, k, p;
+            cin >> x >> y >> k >> p;
             // 自分が設置した爆弾はどうでもいい
             if (k == my_id) continue;
             field[y][x].type = k == -1 ? FieldState::BomSafe : FieldState::BomReady;

@@ -13,7 +13,6 @@ const MOVES: [Coord; 5] = [
     Coord { x: 0, y: 0 },
 ];
 
-// 爆弾の実装はまた今度...
 #[derive(Debug)]
 pub struct Game {
     pub size: usize,
@@ -196,11 +195,11 @@ impl Game {
         }
         s += &*format!("{}\n", self.bom_list.len());
         for (cd, bom) in &self.bom_list {
-            let owner = match *bom {
-                BomCat::Safe(_) => -1,
-                BomCat::Ready((_, id)) => id as i32,
+            let (owner, power) = match *bom {
+                BomCat::Safe(p) => (-1, p),
+                BomCat::Ready((p, id)) => (id as i32, p),
             };
-            s += &*format!("{} {} {}\n", cd.x, cd.y, owner);
+            s += &*format!("{} {} {} {}\n", cd.x, cd.y, owner, power);
         }
         s
     }
